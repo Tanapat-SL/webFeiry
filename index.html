@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตู้เย็นรู้ทัน (Smart Fridge Dashboard)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root, [data-theme="dark"] {
+            --bg: #16161e; --card: #21212b; --inner: #16161e; --border: #2a2a35;
+            --line: #3b3b4f; --text: #ffffff; --muted: #94a3b8; --soft: #cbd5e1;
+            --link: #60a5fa; --linkbg: rgba(59,130,246,.12);
+            --ok: #34d399; --cold: #22d3ee; --thumb: #ffffff;
+            --alert-bg: rgba(239,68,68,.15); --alert-bd: rgba(239,68,68,.3);
+            --alert-title: #fee2e2; --alert-sub: #fca5a5; --warn: #f87171; --warn2: #fb923c;
+            --overlay: rgba(0,0,0,.8);
+        }
+        [data-theme="light"] {
+            --bg: #f3f4f9; --card: #ffffff; --inner: #f3f4f9; --border: #e2e5ef;
+            --line: #d3d7e4; --text: #1b1d2a; --muted: #64748b; --soft: #475569;
+            --link: #2563eb; --linkbg: rgba(37,99,235,.1);
+            --ok: #059669; --cold: #0891b2; --thumb: #ffffff;
+            --alert-bg: rgba(239,68,68,.08); --alert-bd: rgba(239,68,68,.35);
+            --alert-title: #991b1b; --alert-sub: #dc2626; --warn: #dc2626; --warn2: #ea580c;
+            --overlay: rgba(20,22,35,.55);
+        }
+
+        body { font-family: 'Prompt', sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; }
+        .app { background: var(--bg); border-color: var(--border); }
+        .card { background: var(--card); border: 1px solid var(--border); }
+        .inner { background: var(--inner); border: 1px solid var(--border); }
+        .t-main { color: var(--text); } .t-muted { color: var(--muted); } .t-soft { color: var(--soft); }
+        .line { border-color: var(--line); }
+        .btn-icon { background: var(--inner); color: var(--muted); }
+        .btn-icon:hover { color: var(--text); }
+        .link-pill { color: var(--link); background: var(--linkbg); }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .glass-alert { background: var(--alert-bg); border: 1px solid var(--alert-bd); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+        /* รูปแทนด้วย emoji: ไม่ต้องพึ่งอินเทอร์เน็ต จึงไม่มีรูปแตก และตรงกับวัตถุดิบเสมอ */
+        .emoji-bubble { display: flex; align-items: center; justify-content: center; border-radius: 9999px; border: 2px solid var(--line); line-height: 1; }
+        .emoji-hero { display: flex; align-items: center; justify-content: center; line-height: 1; }
+
+        input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: var(--line); height: 6px; border-radius: 4px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--thumb); cursor: pointer; box-shadow: 0 0 8px rgba(0,0,0,.35); transition: transform .1s; }
+        input[type=range]:active::-webkit-slider-thumb { transform: scale(1.2); }
+        .slider-fridge::-webkit-slider-thumb { border: 2px solid #34d399; }
+        .slider-freezer::-webkit-slider-thumb { border: 2px solid #38bdf8; }
+
+        .modal-overlay { opacity: 0; pointer-events: none; transition: opacity .3s ease-out; background: var(--overlay); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: translateY(20px) scale(.95); transition: transform .3s ease-out; background: var(--card); border: 1px solid var(--line); }
+        .modal-overlay.active .modal-content { transform: translateY(0) scale(1); }
+
+        #themeBtn:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen selection:bg-blue-500/30">
+
+    <div class="app w-full max-w-md min-h-screen relative flex flex-col shadow-2xl overflow-hidden border-x">
+
+        <!-- Header -->
+        <header class="pt-10 pb-6 px-6 relative z-10">
+            <div class="flex justify-between items-start gap-3">
+                <div>
+                    <h1 class="text-3xl font-bold t-main mb-1">สวัสดี, Fairy kewarin!</h1>
+                    <p class="text-sm font-medium t-muted">ตู้เย็นรู้ทัน Dashboard</p>
+                </div>
+                <!-- Theme toggle -->
+                <button id="themeBtn" onclick="toggleTheme()" aria-label="สลับโหมดมืด/สว่าง"
+                        class="card w-11 h-11 rounded-full flex items-center justify-center text-xl flex-shrink-0 active:scale-90 transition-transform">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+
+            <!-- Clock -->
+            <div class="card mt-6 flex flex-col items-center justify-center py-5 rounded-3xl shadow-lg relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+                <h2 class="text-4xl font-light t-main tracking-wider" id="timeDisplay">--:--:--</h2>
+                <p class="text-sm t-muted mt-1 font-medium" id="dateDisplay">กำลังโหลดวันที่...</p>
+            </div>
+        </header>
+
+        <main class="flex-1 px-6 pb-12 flex flex-col gap-6 overflow-y-auto hide-scrollbar">
+
+            <!-- Alert -->
+            <button onclick="openModal('alertModal')" class="glass-alert w-full text-left rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition-transform">
+                <span class="text-2xl animate-pulse">⚠️</span>
+                <div>
+                    <h2 class="text-sm font-semibold" style="color:var(--alert-title)">แจ้งเตือนอาหารที่ใกล้หมดอายุ</h2>
+                    <p class="text-[11px] mt-0.5" style="color:var(--alert-sub)">แตะเพื่อดูรายละเอียด</p>
+                </div>
+                <svg class="ml-auto h-5 w-5" style="color:var(--alert-sub)" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            </button>
+
+            <!-- Temperature -->
+            <section>
+                <h3 class="text-sm font-medium t-muted mb-3">ตั้งค่าอุณหภูมิ</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="card p-4 rounded-2xl flex flex-col">
+                        <span class="text-xs t-muted mb-1">ช่องแช่เย็น</span>
+                        <p class="text-xl font-bold mb-3" style="color:var(--ok)" id="fridgeVal">4°C</p>
+                        <input type="range" min="0" max="10" value="4" class="slider-fridge mt-auto" oninput="document.getElementById('fridgeVal').innerText = this.value + '°C'">
+                    </div>
+                    <div class="card p-4 rounded-2xl flex flex-col">
+                        <span class="text-xs t-muted mb-1">ช่องแช่แข็ง</span>
+                        <p class="text-xl font-bold mb-3" style="color:var(--cold)" id="freezerVal">-18°C</p>
+                        <input type="range" min="-20" max="0" value="-18" class="slider-freezer mt-auto" oninput="document.getElementById('freezerVal').innerText = this.value + '°C'">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Fridge items -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-medium t-muted">อาหารในตู้เย็น</h3>
+                    <button onclick="openModal('storageModal')" class="link-pill text-xs font-medium px-2 py-1 rounded-lg">ดูอาหารทั้งหมด</button>
+                </div>
+                <div id="fridgePreview" class="card p-4 rounded-2xl flex justify-between items-center"></div>
+            </section>
+
+            <!-- Recipes -->
+            <section class="mb-4">
+                <h3 class="text-sm font-medium t-muted mb-3">แนะนำเมนูอาหาร</h3>
+                <div id="recipeList" class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal-overlay fixed inset-0 z-[1000] flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="modal-content w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-5 flex justify-between items-center border-b line">
+                <h3 class="font-bold text-lg t-main flex items-center gap-2">⚠️ รายการใกล้หมดอายุ</h3>
+                <button onclick="closeModal('alertModal')" class="btn-icon p-1.5 rounded-full" aria-label="ปิด">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <ul id="alertList" class="space-y-4"></ul>
+                <button onclick="closeModal('alertModal')" class="w-full mt-6 py-3 rounded-xl text-sm font-medium t-main" style="background:var(--line)">รับทราบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Modal -->
+    <div id="storageModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center backdrop-blur-sm sm:p-4">
+        <div class="modal-content w-full max-w-md h-[80vh] sm:h-[70vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col">
+            <div class="p-5 flex justify-between items-center border-b line">
+                <h3 class="font-bold text-lg t-main">อาหารในตู้เย็นทั้งหมด</h3>
+                <button onclick="closeModal('storageModal')" class="btn-icon p-1.5 rounded-full" aria-label="ปิด">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 hide-scrollbar">
+                <div id="storageGrid" class="grid grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Modal -->
+    <div id="recipeModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center backdrop-blur-sm sm:p-4">
+        <div class="modal-content w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div id="modalRecipeHero" class="relative h-48 w-full flex-shrink-0">
+                <div id="modalRecipeEmoji" class="emoji-hero absolute inset-0 text-8xl"></div>
+                <button onclick="closeModal('recipeModal')" class="absolute top-4 right-4 bg-black/40 text-white rounded-full p-2 backdrop-blur-md" aria-label="ปิด">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 hide-scrollbar">
+                <h3 id="modalRecipeTitle" class="text-2xl font-bold t-main mb-2">ชื่อเมนู</h3>
+                <p id="modalRecipeUses" class="text-xs t-muted mb-5"></p>
+                <h4 class="font-medium mb-4 text-sm" style="color:var(--link)">ขั้นตอนการทำ</h4>
+                <ol id="modalRecipeSteps" class="list-decimal list-inside t-soft space-y-3 text-sm leading-relaxed"></ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- ข้อมูล ----------
+        // แต่ละรายการใช้ emoji ตรงกับชื่อ จึงไม่มีรูปแตกและตรงกับวัตถุดิบเสมอ
+        const FOODS = {
+            apple:  { name: 'แอปเปิ้ล', emoji: '🍎', bg: 'linear-gradient(135deg,#fecaca,#fb7185)', info: 'จำนวน: 5 ผล' },
+            cheese: { name: 'ชีสแผ่น',  emoji: '🧀', bg: 'linear-gradient(135deg,#fef3c7,#fbbf24)', info: 'จำนวน: 1 แพ็ค' },
+            milk:   { name: 'นมสด',     emoji: '🥛', bg: 'linear-gradient(135deg,#e0f2fe,#7dd3fc)', info: 'เหลือ 1 วัน', days: 1 },
+            egg:    { name: 'ไข่ไก่',   emoji: '🥚', bg: 'linear-gradient(135deg,#fed7aa,#fdba74)', info: 'เหลือ 3 วัน', days: 3 }
+        };
+
+        const RECIPES = [
+            { title: 'ไข่ตุ๋นนมสด', emoji: '🍮', img: 'images/egg-custard.jpg', bg: 'linear-gradient(135deg,#fde68a,#f59e0b)', uses: ['egg','milk'],
+              steps: ['ผสมไข่ไก่ 2 ฟองและนมสดในปริมาณที่เท่ากัน', 'ปรุงรสด้วยซีอิ๊วขาวและพริกไทย', 'ตีเบาๆให้เข้ากันและกรอง 1 ครั้ง', 'นึ่งไฟอ่อน 15-20 นาที จนสุกเนียน'] },
+            { title: 'ผัดผักกาดขาว', emoji: '🥬', img: 'images/stir-fried-cabbage.jpg', bg: 'linear-gradient(135deg,#bbf7d0,#4ade80)', uses: ['egg'],
+              steps: ['หั่นผักกาดขาวเป็นชิ้นพอดีคำ', 'ตั้งกระทะใส่น้ำมัน ผัดกระเทียมให้หอม', 'ตอกไข่ใส่กระทะ ยีให้สุก', 'ใส่ผักกาดขาว ปรุงรสด้วยซอสหอยนางรม ผัดไฟแรงจนสุก'] },
+            { title: 'ไข่เจียวชีสเยิ้ม', emoji: '🍳', img: 'images/cheese-omelet.jpg', bg: 'linear-gradient(135deg,#fef9c3,#facc15)', uses: ['egg','cheese'],
+              steps: ['ตีไข่ไก่ 2 ฟอง ปรุงรสตามชอบ', 'ฉีกชีสแผ่นใส่ลงไปในชามไข่', 'ตั้งกระทะน้ำมันให้ร้อน เทไข่ลงไป', 'ทอดไฟกลาง พลิกกลับด้านจนสุกเหลือง ชีสละลายเยิ้ม'] },
+            { title: 'สลัดผักแอปเปิ้ล', emoji: '🥗', img: 'images/apple-salad.jpg', bg: 'linear-gradient(135deg,#d9f99d,#84cc16)', uses: ['apple'],
+              steps: ['หั่นแอปเปิ้ลเป็นชิ้นพอดีคำ นำไปแช่น้ำเกลือเล็กน้อยไม่ให้ดำ', 'ล้างผักสลัดให้สะอาด จัดใส่จาน', 'นำแอปเปิ้ลมาวางเรียงด้านบน', 'ราดด้วยน้ำสลัด หรือน้ำมันมะกอก คลุกเคล้าให้เข้ากัน'] }
+        ];
+
+        // ---------- สร้างหน้าจอ ----------
+        // ถ้ามีรูปจริงจะแสดงทับ emoji ถ้าไม่มีไฟล์/โหลดไม่ได้ จะลบรูปทิ้งแล้วเห็น emoji แทนเอง
+        function photo(r) {
+            return r.img ? `<img src="${r.img}" alt="${r.title}" loading="lazy" onerror="this.remove()" class="absolute inset-0 w-full h-full object-cover">` : '';
+        }
+
+        function bubble(f, size, font) {
+            return `<div class="emoji-bubble" style="width:${size}px;height:${size}px;font-size:${font}px;background:${f.bg}" role="img" aria-label="${f.name}">${f.emoji}</div>`;
+        }
+
+        function render() {
+            const keys = Object.keys(FOODS);
+
+            document.getElementById('fridgePreview').innerHTML = keys.map(k => `
+                <div class="flex flex-col items-center gap-1.5 w-1/4">
+                    ${bubble(FOODS[k], 48, 24)}
+                    <span class="text-[10px] t-soft text-center">${FOODS[k].name}</span>
+                </div>`).join('');
+
+            document.getElementById('storageGrid').innerHTML = keys.map(k => {
+                const f = FOODS[k];
+                const color = f.days === 1 ? 'var(--warn)' : f.days ? 'var(--warn2)' : 'var(--muted)';
+                return `<div class="inner p-4 rounded-2xl flex flex-col items-center gap-2">
+                    ${bubble(f, 64, 32)}
+                    <span class="text-sm t-main font-medium">${f.name}</span>
+                    <span class="text-[10px]" style="color:${color}">${f.info}</span>
+                </div>`;
+            }).join('');
+
+            document.getElementById('alertList').innerHTML = keys.filter(k => FOODS[k].days).map(k => {
+                const f = FOODS[k];
+                const color = f.days === 1 ? 'var(--warn)' : 'var(--warn2)';
+                return `<li class="flex items-center gap-4 p-3 rounded-xl" style="background:var(--alert-bg);border:1px solid var(--alert-bd)">
+                    ${bubble(f, 48, 24)}
+                    <div>
+                        <p class="t-main font-medium text-sm">${f.name}</p>
+                        <p class="text-xs mt-0.5" style="color:${color}">จะหมดอายุใน ${f.days} วัน</p>
+                    </div>
+                </li>`;
+            }).join('');
+
+            document.getElementById('recipeList').innerHTML = RECIPES.map((r, i) => `
+                <button onclick="openRecipe(${i})" class="card min-w-[140px] rounded-2xl overflow-hidden text-left active:scale-95 transition-transform flex-shrink-0">
+                    <div class="emoji-hero relative overflow-hidden h-24 w-full text-5xl" style="background:${r.bg}">${r.emoji}${photo(r)}</div>
+                    <div class="p-3"><p class="text-sm t-main truncate">${r.title}</p></div>
+                </button>`).join('') + '<div class="min-w-[1px] flex-shrink-0"></div>';
+        }
+
+        // ---------- นาฬิกา ----------
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('th-TH', { hour12: false });
+            const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+            const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            document.getElementById('dateDisplay').textContent =
+                `วัน${days[now.getDay()]}ที่ ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear() + 543}`;
+        }
+        setInterval(updateClock, 1000);
+
+        // ---------- Modal ----------
+        function openModal(id)  { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function openRecipe(i) {
+            const r = RECIPES[i];
+            document.getElementById('modalRecipeTitle').textContent = r.title;
+            document.getElementById('modalRecipeHero').style.background = r.bg;
+            document.getElementById('modalRecipeEmoji').innerHTML = r.emoji + photo(r);
+            document.getElementById('modalRecipeUses').textContent =
+                'วัตถุดิบจากตู้เย็น: ' + r.uses.map(k => FOODS[k].emoji + ' ' + FOODS[k].name).join('  ');
+            const ol = document.getElementById('modalRecipeSteps');
+            ol.innerHTML = '';
+            r.steps.forEach(s => { const li = document.createElement('li'); li.textContent = s; ol.appendChild(li); });
+            openModal('recipeModal');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(m =>
+            m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => closeModal(m.id));
+        });
+
+        // ---------- ธีมมืด/สว่าง ----------
+        function applyTheme(t) {
+            document.documentElement.setAttribute('data-theme', t);
+            document.getElementById('themeIcon').textContent = t === 'dark' ? '🌙' : '☀️';
+        }
+        function toggleTheme() {
+            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            try { localStorage.setItem('fridge-theme', next); } catch (e) {}
+        }
+        (function initTheme() {
+            let saved = null;
+            try { saved = localStorage.getItem('fridge-theme'); } catch (e) {}
+            const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            applyTheme(saved || (prefersLight ? 'light' : 'dark'));
+        })();
+
+        render();
+        updateClock();
+    </script>
+</body>
+</html>
