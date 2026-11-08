@@ -3,14 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ตู้เย็นรู้ทัน (Smart Fridge Dashboard)</title>
+    <title>SMARTFRIDGE ตู้เย็นรู้ทัน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Dark Mode (Default) */
+            --bg-body: #16161e;
+            --bg-container: #16161e;
+            --bg-card: #21212b;
+            --border-primary: #21212b;
+            --border-secondary: #2a2a35;
+            --border-tertiary: #3b3b4f;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8; /* slate-400 */
+            --text-muted: #cbd5e1; /* slate-300 */
+            --icon-bg: #16161e;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+            --slider-bg: #3b3b4f;
+            --glass-bg: rgba(239, 68, 68, 0.15);
+        }
+
+        [data-theme="light"] {
+            /* Light Mode */
+            --bg-body: #e5e7eb;
+            --bg-container: #f9fafb;
+            --bg-card: #ffffff;
+            --border-primary: #d1d5db;
+            --border-secondary: #e5e7eb;
+            --border-tertiary: #d1d5db;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #4b5563;
+            --icon-bg: #f3f4f6;
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+            --slider-bg: #d1d5db;
+            --glass-bg: rgba(239, 68, 68, 0.05);
+        }
+
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #16161e;
-            color: #ffffff;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .hide-scrollbar::-webkit-scrollbar {
@@ -22,20 +57,22 @@
         }
 
         .glass-alert {
-            background: rgba(239, 68, 68, 0.15);
+            background: var(--glass-bg);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(239, 68, 68, 0.3);
             box-shadow: 0 8px 32px 0 rgba(239, 68, 68, 0.2);
+            transition: background-color 0.3s ease;
         }
 
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
-            background: #3b3b4f;
+            background: var(--slider-bg);
             height: 6px;
             border-radius: 4px;
             outline: none;
+            transition: background 0.3s ease;
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -57,7 +94,8 @@
         .modal-overlay {
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease-out;
+            background: var(--modal-overlay);
+            transition: opacity 0.3s ease-out, background 0.3s ease;
         }
         .modal-overlay.active {
             opacity: 1;
@@ -65,37 +103,48 @@
         }
         .modal-content {
             transform: translateY(20px) scale(0.95);
-            transition: transform 0.3s ease-out;
+            transition: transform 0.3s ease-out, background-color 0.3s ease;
         }
         .modal-overlay.active .modal-content {
             transform: translateY(0) scale(1);
+        }
+        
+        /* Smooth transitions for theme switching */
+        .theme-transition {
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
         }
     </style>
 </head>
 <body class="flex justify-center min-h-screen selection:bg-blue-500/30">
 
     <!-- Mobile App Container -->
-    <div class="w-full max-w-md bg-[#16161e] min-h-screen relative flex flex-col shadow-2xl overflow-hidden border-x border-[#21212b]">
+    <div class="w-full max-w-md bg-[var(--bg-container)] min-h-screen relative flex flex-col shadow-2xl overflow-hidden border-x border-[var(--border-primary)] theme-transition">
         
         <!-- Header -->
         <header class="pt-10 pb-6 px-6 relative z-10">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold text-blue-400 tracking-wide">ตู้เย็นรู้ทัน</h1>
+                    <h1 class="text-lg font-bold text-blue-400 tracking-wide">SMARTFRIDGE ตู้เย็นรู้ทัน</h1>
                 </div>
                 <div class="flex items-center gap-2">
-                    <p class="text-sm font-medium text-white">สวัสดี, <span id="userNameDisplay">Fairy kewarin</span>!</p>
-                    <button onclick="editName()" class="text-slate-400 hover:text-white bg-[#21212b] p-1.5 rounded-full border border-[#2a2a35] transition-colors">
+                    <p class="text-sm font-medium text-[var(--text-primary)] theme-transition">สวัสดี, <span id="userNameDisplay">Fairy kewarin</span>!</p>
+                    
+                    <!-- Theme Toggle Button -->
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] p-1.5 rounded-full border border-[var(--border-secondary)] transition-colors theme-transition">
+                        ☀️
+                    </button>
+                    
+                    <button onclick="editName()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] p-1.5 rounded-full border border-[var(--border-secondary)] transition-colors theme-transition">
                         ✏️
                     </button>
                 </div>
             </div>
 
             <!-- Digital Clock Widget -->
-            <div class="mt-6 flex flex-col items-center justify-center py-5 bg-[#21212b] rounded-3xl border border-[#2a2a35] shadow-lg relative overflow-hidden">
+            <div class="mt-6 flex flex-col items-center justify-center py-5 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-secondary)] shadow-lg relative overflow-hidden theme-transition">
                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
-                <h2 class="text-4xl font-light text-white tracking-wider" id="timeDisplay">--:--:--</h2>
-                <p class="text-sm text-slate-400 mt-1 font-medium" id="dateDisplay">กำลังโหลดวันที่...</p>
+                <h2 class="text-4xl font-light text-[var(--text-primary)] tracking-wider theme-transition" id="timeDisplay">--:--:--</h2>
+                <p class="text-sm text-[var(--text-secondary)] mt-1 font-medium theme-transition" id="dateDisplay">กำลังโหลดวันที่...</p>
             </div>
         </header>
 
@@ -106,8 +155,8 @@
             <button onclick="openModal('alertModal')" class="w-full text-left glass-alert rounded-2xl p-4 flex items-center gap-3 group active:scale-[0.98] transition-transform">
                 <span class="text-2xl animate-pulse">⚠️</span>
                 <div>
-                    <h2 class="text-sm font-semibold text-red-100">แจ้งเตือนอาหารที่ใกล้หมดอายุ</h2>
-                    <p class="text-[11px] text-red-300 mt-0.5">แตะเพื่อดูรายละเอียด</p>
+                    <h2 class="text-sm font-semibold text-red-500 dark:text-red-100">แจ้งเตือนอาหารที่ใกล้หมดอายุ</h2>
+                    <p class="text-[11px] text-red-400 dark:text-red-300 mt-0.5">แตะเพื่อดูรายละเอียด</p>
                 </div>
                 <div class="ml-auto text-red-400/70 group-hover:text-red-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
@@ -116,15 +165,15 @@
 
             <!-- Storage Settings -->
             <section>
-                <h3 class="text-sm font-medium text-slate-400 mb-3">ตั้งค่าอุณหภูมิ</h3>
+                <h3 class="text-sm font-medium text-[var(--text-secondary)] mb-3 theme-transition">ตั้งค่าอุณหภูมิ</h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-[#21212b] p-4 rounded-2xl border border-[#2a2a35] flex flex-col">
-                        <span class="text-xs text-slate-400 mb-1">ช่องแช่เย็น</span>
+                    <div class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-secondary)] flex flex-col theme-transition">
+                        <span class="text-xs text-[var(--text-secondary)] mb-1 theme-transition">ช่องแช่เย็น</span>
                         <p class="text-xl font-bold text-emerald-400 mb-3" id="fridgeVal">4°C</p>
                         <input type="range" min="0" max="10" value="4" class="slider-fridge mt-auto" oninput="document.getElementById('fridgeVal').innerText = this.value + '°C'">
                     </div>
-                    <div class="bg-[#21212b] p-4 rounded-2xl border border-[#2a2a35] flex flex-col">
-                        <span class="text-xs text-slate-400 mb-1">ช่องแช่แข็ง</span>
+                    <div class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-secondary)] flex flex-col theme-transition">
+                        <span class="text-xs text-[var(--text-secondary)] mb-1 theme-transition">ช่องแช่แข็ง</span>
                         <p class="text-xl font-bold text-cyan-400 mb-3" id="freezerVal">-18°C</p>
                         <input type="range" min="-20" max="0" value="-18" class="slider-freezer mt-auto" oninput="document.getElementById('freezerVal').innerText = this.value + '°C'">
                     </div>
@@ -134,55 +183,55 @@
             <!-- Your Storage -->
             <section>
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-medium text-slate-400">อาหารในตู้เย็น</h3>
-                    <button onclick="openModal('storageModal')" class="text-xs text-blue-400 hover:text-blue-300 font-medium px-2 py-1 bg-blue-500/10 rounded-lg">ดูอาหารทั้งหมด</button>
+                    <h3 class="text-sm font-medium text-[var(--text-secondary)] theme-transition">อาหารในตู้เย็น</h3>
+                    <button onclick="openModal('storageModal')" class="text-xs text-blue-500 dark:text-blue-400 hover:text-blue-400 font-medium px-2 py-1 bg-blue-500/10 rounded-lg">ดูอาหารทั้งหมด</button>
                 </div>
-                <div class="bg-[#21212b] p-4 rounded-2xl border border-[#2a2a35] flex justify-between items-center">
+                <div class="bg-[var(--bg-card)] p-4 rounded-2xl border border-[var(--border-secondary)] flex justify-between items-center theme-transition">
                     <div class="flex flex-col items-center gap-1.5 w-1/4">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-[#3b3b4f]">🍎</div>
-                        <span class="text-[10px] text-slate-300 text-center">แอปเปิ้ล</span>
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-[var(--border-tertiary)] theme-transition">🍎</div>
+                        <span class="text-[10px] text-[var(--text-muted)] text-center theme-transition">แอปเปิ้ล</span>
                     </div>
                     <div class="flex flex-col items-center gap-1.5 w-1/4">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-[#3b3b4f]">🧀</div>
-                        <span class="text-[10px] text-slate-300 text-center">ชีสแผ่น</span>
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-[var(--border-tertiary)] theme-transition">🧀</div>
+                        <span class="text-[10px] text-[var(--text-muted)] text-center theme-transition">ชีสแผ่น</span>
                     </div>
                     <div class="flex flex-col items-center gap-1.5 w-1/4">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-[#3b3b4f]">🥛</div>
-                        <span class="text-[10px] text-slate-300 text-center">นมสด</span>
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-[var(--border-tertiary)] theme-transition">🥛</div>
+                        <span class="text-[10px] text-[var(--text-muted)] text-center theme-transition">นมสด</span>
                     </div>
                     <div class="flex flex-col items-center gap-1.5 w-1/4">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-[#3b3b4f]">🥚</div>
-                        <span class="text-[10px] text-slate-300 text-center">ไข่ไก่</span>
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-[var(--border-tertiary)] theme-transition">🥚</div>
+                        <span class="text-[10px] text-[var(--text-muted)] text-center theme-transition">ไข่ไก่</span>
                     </div>
                 </div>
             </section>
 
             <!-- Recipes -->
             <section class="mb-4">
-                <h3 class="text-sm font-medium text-slate-400 mb-3">แนะนำเมนูอาหาร</h3>
+                <h3 class="text-sm font-medium text-[var(--text-secondary)] mb-3 theme-transition">แนะนำเมนูอาหาร</h3>
                 <div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
                     <button onclick="openRecipe('ไข่ตุ๋นนมสด', '🥚 + 🥛', ['ผสมไข่ไก่ 2 ฟองและนมสดในปริมาณที่เท่ากัน', 'ปรุงรสด้วยซีอิ๊วขาวและพริกไทย', 'ตีเบาๆให้เข้ากันและกรอง 1 ครั้ง', 'นึ่งไฟอ่อน 15-20 นาที จนสุกเนียน'])" 
-                            class="min-w-[140px] bg-[#21212b] rounded-2xl overflow-hidden border border-[#2a2a35] text-left active:scale-95 transition-transform flex-shrink-0">
-                        <div class="h-24 w-full bg-[#16161e] flex items-center justify-center text-3xl">🥚 + 🥛</div>
-                        <div class="p-3"><p class="text-sm text-white truncate">ไข่ตุ๋นนมสด</p></div>
+                            class="min-w-[140px] bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-[var(--border-secondary)] text-left active:scale-95 transition-transform flex-shrink-0 theme-transition">
+                        <div class="h-24 w-full bg-[var(--icon-bg)] flex items-center justify-center text-3xl theme-transition">🥚 + 🥛</div>
+                        <div class="p-3"><p class="text-sm text-[var(--text-primary)] truncate theme-transition">ไข่ตุ๋นนมสด</p></div>
                     </button>
                     
                     <button onclick="openRecipe('ผัดผักกาดขาว', '🥬 + 🧄', ['หั่นผักกาดขาวเป็นชิ้นพอดีคำ', 'ตั้งกระทะใส่น้ำมัน ผัดกระเทียมให้หอม', 'ตอกไข่ใส่กระทะ ยีให้สุก', 'ใส่ผักกาดขาว ปรุงรสด้วยซอสหอยนางรม ผัดไฟแรงจนสุก'])" 
-                            class="min-w-[140px] bg-[#21212b] rounded-2xl overflow-hidden border border-[#2a2a35] text-left active:scale-95 transition-transform flex-shrink-0">
-                        <div class="h-24 w-full bg-[#16161e] flex items-center justify-center text-3xl">🥬 + 🧄</div>
-                        <div class="p-3"><p class="text-sm text-white truncate">ผัดผักกาดขาว</p></div>
+                            class="min-w-[140px] bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-[var(--border-secondary)] text-left active:scale-95 transition-transform flex-shrink-0 theme-transition">
+                        <div class="h-24 w-full bg-[var(--icon-bg)] flex items-center justify-center text-3xl theme-transition">🥬 + 🧄</div>
+                        <div class="p-3"><p class="text-sm text-[var(--text-primary)] truncate theme-transition">ผัดผักกาดขาว</p></div>
                     </button>
 
                     <button onclick="openRecipe('ไข่เจียวชีสเยิ้ม', '🥚 + 🧀', ['ตีไข่ไก่ 2 ฟอง ปรุงรสตามชอบ', 'ฉีกชีสแผ่นใส่ลงไปในชามไข่', 'ตั้งกระทะน้ำมันให้ร้อน เทไข่ลงไป', 'ทอดไฟกลาง พลิกกลับด้านจนสุกเหลือง ชีสละลายเยิ้ม'])" 
-                            class="min-w-[140px] bg-[#21212b] rounded-2xl overflow-hidden border border-[#2a2a35] text-left active:scale-95 transition-transform flex-shrink-0">
-                        <div class="h-24 w-full bg-[#16161e] flex items-center justify-center text-3xl">🥚 + 🧀</div>
-                        <div class="p-3"><p class="text-sm text-white truncate">ไข่เจียวชีสเยิ้ม</p></div>
+                            class="min-w-[140px] bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-[var(--border-secondary)] text-left active:scale-95 transition-transform flex-shrink-0 theme-transition">
+                        <div class="h-24 w-full bg-[var(--icon-bg)] flex items-center justify-center text-3xl theme-transition">🥚 + 🧀</div>
+                        <div class="p-3"><p class="text-sm text-[var(--text-primary)] truncate theme-transition">ไข่เจียวชีสเยิ้ม</p></div>
                     </button>
 
                     <button onclick="openRecipe('สลัดผักแอปเปิ้ล', '🥗 + 🍎', ['หั่นแอปเปิ้ลเป็นชิ้นพอดีคำ นำไปแช่น้ำเกลือเล็กน้อยไม่ให้ดำ', 'ล้างผักสลัดให้สะอาด จัดใส่จาน', 'นำแอปเปิ้ลมาวางเรียงด้านบน', 'ราดด้วยน้ำสลัด หรือน้ำมันมะกอก คลุกเคล้าให้เข้ากัน'])" 
-                            class="min-w-[140px] bg-[#21212b] rounded-2xl overflow-hidden border border-[#2a2a35] text-left active:scale-95 transition-transform flex-shrink-0">
-                        <div class="h-24 w-full bg-[#16161e] flex items-center justify-center text-3xl">🥗 + 🍎</div>
-                        <div class="p-3"><p class="text-sm text-white truncate">สลัดผักแอปเปิ้ล</p></div>
+                            class="min-w-[140px] bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-[var(--border-secondary)] text-left active:scale-95 transition-transform flex-shrink-0 theme-transition">
+                        <div class="h-24 w-full bg-[var(--icon-bg)] flex items-center justify-center text-3xl theme-transition">🥗 + 🍎</div>
+                        <div class="p-3"><p class="text-sm text-[var(--text-primary)] truncate theme-transition">สลัดผักแอปเปิ้ล</p></div>
                     </button>
                     <div class="min-w-[1px] flex-shrink-0"></div>
                 </div>
@@ -193,66 +242,66 @@
     <!-- ================= MODALS ================= -->
     
     <!-- 1. Alert Modal -->
-    <div id="alertModal" class="modal-overlay fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div class="modal-content bg-[#21212b] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-red-500/30">
-            <div class="p-5 flex justify-between items-center border-b border-[#3b3b4f]">
-                <h3 class="font-bold text-lg text-white flex items-center gap-2">⚠️ รายการใกล้หมดอายุ</h3>
-                <button onclick="closeModal('alertModal')" class="text-slate-400 hover:text-white bg-[#16161e] p-1.5 rounded-full">
+    <div id="alertModal" class="modal-overlay fixed inset-0 z-[1000] flex items-center justify-center p-4">
+        <div class="modal-content bg-[var(--bg-card)] w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-red-500/30 theme-transition">
+            <div class="p-5 flex justify-between items-center border-b border-[var(--border-tertiary)] theme-transition">
+                <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2 theme-transition">⚠️ รายการใกล้หมดอายุ</h3>
+                <button onclick="closeModal('alertModal')" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--icon-bg)] p-1.5 rounded-full theme-transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             <div class="p-6">
                 <ul class="space-y-4">
-                    <li class="flex items-center gap-4 bg-red-900/20 p-3 rounded-xl border border-red-500/20">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-red-500/30">🥛</div>
+                    <li class="flex items-center gap-4 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-red-500/30 theme-transition">🥛</div>
                         <div>
-                            <p class="text-white font-medium text-sm">นมสด</p>
-                            <p class="text-red-400 text-xs mt-0.5">จะหมดอายุใน 1 วัน</p>
+                            <p class="text-[var(--text-primary)] font-medium text-sm theme-transition">นมสด</p>
+                            <p class="text-red-500 dark:text-red-400 text-xs mt-0.5">จะหมดอายุใน 1 วัน</p>
                         </div>
                     </li>
-                    <li class="flex items-center gap-4 bg-orange-900/20 p-3 rounded-xl border border-orange-500/20">
-                        <div class="w-12 h-12 rounded-full bg-[#16161e] flex items-center justify-center text-2xl border border-orange-500/30">🥚</div>
+                    <li class="flex items-center gap-4 bg-orange-500/10 p-3 rounded-xl border border-orange-500/20">
+                        <div class="w-12 h-12 rounded-full bg-[var(--icon-bg)] flex items-center justify-center text-2xl border border-orange-500/30 theme-transition">🥚</div>
                         <div>
-                            <p class="text-white font-medium text-sm">ไข่ไก่</p>
-                            <p class="text-orange-400 text-xs mt-0.5">จะหมดอายุใน 3 วัน</p>
+                            <p class="text-[var(--text-primary)] font-medium text-sm theme-transition">ไข่ไก่</p>
+                            <p class="text-orange-500 dark:text-orange-400 text-xs mt-0.5">จะหมดอายุใน 3 วัน</p>
                         </div>
                     </li>
                 </ul>
-                <button onclick="closeModal('alertModal')" class="w-full mt-6 bg-[#3b3b4f] text-white py-3 rounded-xl text-sm font-medium">รับทราบ</button>
+                <button onclick="closeModal('alertModal')" class="w-full mt-6 bg-[var(--border-tertiary)] hover:opacity-80 transition-opacity text-[var(--text-primary)] py-3 rounded-xl text-sm font-medium theme-transition">รับทราบ</button>
             </div>
         </div>
     </div>
 
     <!-- 2. Storage Modal -->
-    <div id="storageModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm sm:p-4">
-        <div class="modal-content bg-[#21212b] w-full max-w-md h-[80vh] sm:h-[70vh] sm:rounded-3xl rounded-t-3xl shadow-2xl border border-[#3b3b4f] flex flex-col">
-            <div class="p-5 flex justify-between items-center border-b border-[#3b3b4f]">
-                <h3 class="font-bold text-lg text-white">อาหารในตู้เย็นทั้งหมด</h3>
-                <button onclick="closeModal('storageModal')" class="text-slate-400 hover:text-white bg-[#16161e] p-1.5 rounded-full">
+    <div id="storageModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center sm:p-4">
+        <div class="modal-content bg-[var(--bg-card)] w-full max-w-md h-[80vh] sm:h-[70vh] sm:rounded-3xl rounded-t-3xl shadow-2xl border border-[var(--border-tertiary)] flex flex-col theme-transition">
+            <div class="p-5 flex justify-between items-center border-b border-[var(--border-tertiary)] theme-transition">
+                <h3 class="font-bold text-lg text-[var(--text-primary)] theme-transition">อาหารในตู้เย็นทั้งหมด</h3>
+                <button onclick="closeModal('storageModal')" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--icon-bg)] p-1.5 rounded-full theme-transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 hide-scrollbar">
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-[#16161e] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[#2a2a35]">
-                        <div class="w-16 h-16 rounded-full bg-[#21212b] flex items-center justify-center text-4xl border border-[#3b3b4f]">🍎</div>
-                        <span class="text-sm text-white font-medium">แอปเปิ้ล</span>
-                        <span class="text-[10px] text-slate-400">จำนวน: 5 ผล</span>
+                    <div class="bg-[var(--icon-bg)] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[var(--border-secondary)] theme-transition">
+                        <div class="w-16 h-16 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-4xl border border-[var(--border-tertiary)] theme-transition">🍎</div>
+                        <span class="text-sm text-[var(--text-primary)] font-medium theme-transition">แอปเปิ้ล</span>
+                        <span class="text-[10px] text-[var(--text-secondary)] theme-transition">จำนวน: 5 ผล</span>
                     </div>
-                    <div class="bg-[#16161e] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[#2a2a35]">
-                        <div class="w-16 h-16 rounded-full bg-[#21212b] flex items-center justify-center text-4xl border border-[#3b3b4f]">🧀</div>
-                        <span class="text-sm text-white font-medium">ชีสแผ่น</span>
-                        <span class="text-[10px] text-slate-400">จำนวน: 1 แพ็ค</span>
+                    <div class="bg-[var(--icon-bg)] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[var(--border-secondary)] theme-transition">
+                        <div class="w-16 h-16 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-4xl border border-[var(--border-tertiary)] theme-transition">🧀</div>
+                        <span class="text-sm text-[var(--text-primary)] font-medium theme-transition">ชีสแผ่น</span>
+                        <span class="text-[10px] text-[var(--text-secondary)] theme-transition">จำนวน: 1 แพ็ค</span>
                     </div>
-                    <div class="bg-[#16161e] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[#2a2a35]">
-                        <div class="w-16 h-16 rounded-full bg-[#21212b] flex items-center justify-center text-4xl border border-[#3b3b4f]">🥛</div>
-                        <span class="text-sm text-white font-medium">นมสด</span>
-                        <span class="text-[10px] text-red-400">เหลือ 1 วัน</span>
+                    <div class="bg-[var(--icon-bg)] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[var(--border-secondary)] theme-transition">
+                        <div class="w-16 h-16 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-4xl border border-[var(--border-tertiary)] theme-transition">🥛</div>
+                        <span class="text-sm text-[var(--text-primary)] font-medium theme-transition">นมสด</span>
+                        <span class="text-[10px] text-red-500">เหลือ 1 วัน</span>
                     </div>
-                    <div class="bg-[#16161e] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[#2a2a35]">
-                        <div class="w-16 h-16 rounded-full bg-[#21212b] flex items-center justify-center text-4xl border border-[#3b3b4f]">🥚</div>
-                        <span class="text-sm text-white font-medium">ไข่ไก่</span>
-                        <span class="text-[10px] text-orange-400">เหลือ 3 วัน</span>
+                    <div class="bg-[var(--icon-bg)] p-4 rounded-2xl flex flex-col items-center gap-2 border border-[var(--border-secondary)] theme-transition">
+                        <div class="w-16 h-16 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-4xl border border-[var(--border-tertiary)] theme-transition">🥚</div>
+                        <span class="text-sm text-[var(--text-primary)] font-medium theme-transition">ไข่ไก่</span>
+                        <span class="text-[10px] text-orange-500">เหลือ 3 วัน</span>
                     </div>
                 </div>
             </div>
@@ -260,23 +309,46 @@
     </div>
 
     <!-- 3. Recipe Modal -->
-    <div id="recipeModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm sm:p-4">
-        <div class="modal-content bg-[#21212b] w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl border border-[#3b3b4f] flex flex-col">
-            <div class="relative h-40 w-full flex-shrink-0 bg-[#16161e] flex items-center justify-center border-b border-[#2a2a35]">
+    <div id="recipeModal" class="modal-overlay fixed inset-0 z-[1000] flex items-end sm:items-center justify-center sm:p-4">
+        <div class="modal-content bg-[var(--bg-card)] w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl border border-[var(--border-tertiary)] flex flex-col theme-transition">
+            <div class="relative h-40 w-full flex-shrink-0 bg-[var(--icon-bg)] flex items-center justify-center border-b border-[var(--border-secondary)] theme-transition">
                 <div id="modalRecipeEmoji" class="text-6xl drop-shadow-lg"></div>
-                <button onclick="closeModal('recipeModal')" class="absolute top-4 right-4 bg-[#21212b] text-slate-400 hover:text-white rounded-full p-2 border border-[#3b3b4f]">
+                <button onclick="closeModal('recipeModal')" class="absolute top-4 right-4 bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-full p-2 border border-[var(--border-tertiary)] theme-transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 hide-scrollbar">
-                <h3 id="modalRecipeTitle" class="text-2xl font-bold text-white mb-4">ชื่อเมนู</h3>
-                <h4 class="text-blue-400 font-medium mb-3 text-sm">ขั้นตอนการทำ</h4>
-                <ol id="modalRecipeSteps" class="list-decimal list-inside text-slate-300 space-y-3 text-sm leading-relaxed"></ol>
+                <h3 id="modalRecipeTitle" class="text-2xl font-bold text-[var(--text-primary)] mb-4 theme-transition">ชื่อเมนู</h3>
+                <h4 class="text-blue-500 dark:text-blue-400 font-medium mb-3 text-sm">ขั้นตอนการทำ</h4>
+                <ol id="modalRecipeSteps" class="list-decimal list-inside text-[var(--text-muted)] space-y-3 text-sm leading-relaxed theme-transition"></ol>
             </div>
         </div>
     </div>
 
     <script>
+        // Theme Management
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('smartFridgeTheme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('smartFridgeTheme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Apply theme early on load
+        loadTheme();
+
         // Name Management
         function loadName() {
             const savedName = localStorage.getItem('smartFridgeUserName') || 'Fairy kewarin';
